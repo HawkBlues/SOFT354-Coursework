@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="MergeSort.cu" />
+    <CudaCompile Include="BubbleSort.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D4D7EE4B-217F-4C21-B850-B872E33524CE}</ProjectGuid>
