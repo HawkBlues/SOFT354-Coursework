@@ -17,27 +17,37 @@ __global__ void mergeSortLeft(int *array, int *Left, int *Right, int Middle, int
 }
 
 __global__ void mergeSortRight(int *array, int *Left, int *Right, int Middle, int End) {
-	for (int i = (Middle + 1); i <= End; i++) {
-		Right[i] = array[i];  //Copy the second half of the array into the Right
+	int k = 0;
+	for (int i = (Middle); i <= End; i++) {
+		Right[k] = array[i];  //Copy the second half of the array into the Right
+		k++;
 	}
 }
 
 __global__ void mergeBoth(int *array, int *Left, int *Right, int Middle, int End) {
 	int i = 0;
 	int j = 0;
-	int k = 0;
+	//int k = 0;
 
-	while (i < Middle && j < End) {
-	if (Left[i] <= Right[j]) {
-		array[k] = Right[j];
-		j++;
+	//for (int k = 0; k < 18; k++) {
+	//	array[k] = 1;
+	//}
+
+
+	
+	for (int k = 0; k <= 10; k++) {
+		//if (i <= Middle && j <= End) { //They are moving over empty memory slots!
+			if (Left[i] > Right[j]) {
+				array[k] = Right[j];
+				j++;
+			}
+			else {
+				array[k] = Left[i];
+				i++;
+			}
+		//	k++;
+		//}
 	}
-	else {
-		array[k] = Left[i];
-		i++;
-	}
-	k++;
-}
 }
 
 void populateRandomArray(int *x, int num_elements) {
@@ -79,28 +89,29 @@ int main(void)
 	//for (int i = 0; i < number_of_trials; i++) {
 	for (int i = 0; i < 1; i++) {
 		int size = trials[i] * sizeof(int);
+	
 
 		int middle = (number_of_trials / 2); //Used to find the middle of the matrix
 		int end = number_of_trials;//Used to find the end of the matrix
 
 		host_a = (int *)malloc(size);//Used to store the while 1d matrix
-		host_Left = (int *)malloc(size);//Used to get the si
-		host_Right = (int *)malloc(size);//Used to store the right half of the matrix
+		host_Left = (int *)malloc(size/2);//Used to get the si
+		host_Right = (int *)malloc(size/2);//Used to store the right half of the matrix
 
-		host_c = (int *)malloc(size);//TESTING
+		host_c = (int *)malloc(size*2);//TESTING
 
 		cudaMalloc((void **)&device_a, size);
-		cudaMalloc((void **)&device_Left, (size));
-		cudaMalloc((void **)&device_Right, (size));
-		cudaMalloc((void **)&device_c, (size)); //TESTING
+		cudaMalloc((void **)&device_Left, (size/2 ));
+		cudaMalloc((void **)&device_Right, (size/2 ));
+		cudaMalloc((void **)&device_c, size*2); //TESTING
 
 		populateRandomArray(host_a, number_of_trials);
 
 
 
 		cudaMemcpy(device_a, host_a, size, cudaMemcpyHostToDevice);
-		cudaMemcpy(device_Left, host_Left, size, cudaMemcpyHostToDevice);
-		cudaMemcpy(device_Right, host_Right, size, cudaMemcpyHostToDevice);
+		//cudaMemcpy(device_Left, host_Left, size/2, cudaMemcpyHostToDevice);
+		//cudaMemcpy(device_Right, host_Right, size/2, cudaMemcpyHostToDevice);
 
 		dim3 dimBlock(THREADS_PER_BLOCK, 1, 1);
 		dim3 dimGrid((trials[i] + dimBlock.x - 1) / dimBlock.x, 1, 1);
@@ -116,7 +127,7 @@ int main(void)
 		cudaThreadSynchronize();
 		mergeSortRight << < dimGrid, dimBlock >> > (device_a, device_Left, device_Right, middle, end);
 		cudaThreadSynchronize();
-		//mergeBoth << < dimGrid, dimBlock >> > (device_c, device_Left, device_Right, middle, end);
+		mergeBoth << < dimGrid, dimBlock >> > (device_c, device_Left, device_Right, middle, end);
 		//When LEft and right are run, they populate device_left and right correctly. This is copied correctly.
 		//Yet when trying to copy DeviceC (used for testing) from mergeBoth to see the contents, it's totally blank?
 
@@ -129,14 +140,30 @@ int main(void)
 
 		cudaThreadSynchronize();
 
-		cudaMemcpy(host_c, device_c, size, cudaMemcpyDeviceToHost);
+		cudaMemcpy(host_Left, device_Left, size/2, cudaMemcpyDeviceToHost);
+		cudaMemcpy(host_Right, device_Right, size/2, cudaMemcpyDeviceToHost);
+		cudaMemcpy(host_c, device_c, size*2, cudaMemcpyDeviceToHost);
 	
 
-		printf("Entire Sorted List");
+		printf("Entire Sorted List :Left");
+		for (int i = 0; i < number_of_trials/2; i++) {
+			printf("%d,", host_Left[i]);
+		}
+		printf("\n");
+
+		printf("Entire Sorted List :Right");
+		for (int i = 0; i < number_of_trials/2; i++) {
+			printf("%d,", host_Right[i]);
+		}
+		printf("\n");
+
+		printf("Entire Sorted List :ALL");
 		for (int i = 0; i < number_of_trials; i++) {
 			printf("%d,", host_c[i]);
 		}
 		printf("\n");
+
+		printf("%d = END", end);
 
 
 	
