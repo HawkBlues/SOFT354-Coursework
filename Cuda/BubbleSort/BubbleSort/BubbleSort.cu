@@ -3,15 +3,10 @@
 #include <device_launch_parameters.h>
 #include <stdio.h>
 #include <stdlib.h>
-
 #include "win-gettimeofday.h"
 
 /* Number of threads per block */
 #define THREADS_PER_BLOCK 512
-
-
-
-
 
 __global__ void bubbleSort(int array[], int End) { //Used to sort the given array as a BubbleSort
 	int swapped = 0;
@@ -31,9 +26,6 @@ __global__ void bubbleSort(int array[], int End) { //Used to sort the given arra
 			
 }
 
-
-
-
 void populateRandomArray(int *x, int num_elements) { //Used to populate the given array with random integers
 	for (int i = 0; i < num_elements; i++) {
 		x[i] = rand() % 100 + 1;
@@ -41,9 +33,9 @@ void populateRandomArray(int *x, int num_elements) { //Used to populate the give
 }
 
 void bubbleSortCPU(int array[], int End) { //Used to sort the given array as a BubbleSort
-
 	int swapped = 0;
 	int temp;
+
 	do {
 		swapped = 0;
 		for (int i = 0; i < End; i++) {
@@ -59,10 +51,6 @@ void bubbleSortCPU(int array[], int End) { //Used to sort the given array as a B
 
 }
 
-
-
-
-
 int main(void)
 {
 	const int number_of_elements = 100000; //Total amount of elements to be sorted
@@ -75,19 +63,17 @@ int main(void)
 	int* device_a;//used to store the whole 1d matrix on the device
 	int* device_c;//used to store the sorted 1d matrix on the device
 
-
 	double cpu_time_without_allocation;
 	double cpu_time_with_allocation;
 	double cpu_end_time;
 
-	
 	double gpu_time_without_transfer;
 	double gpu_time_with_transfer;
 	double gpu_end_time_without_transfer;
 	double gpu_end_time_with_transfer;
 
 	
-
+	//----USED FOR SERIAL IMPLEMENTATION
 	//int* arrayCPU;
 
 	//cpu_time_with_allocation = get_current_time();
@@ -106,7 +92,7 @@ int main(void)
 	//printf("Number of elements = %d, CPU Time (Including data allocation): %lfs\n", number_of_elements, (cpu_end_time - cpu_time_with_allocation));
 
 	//free(arrayCPU);
-	
+	//--------------------------------------------------------
 	
 	for (int i = 0; i < 1; i++) {
 		int size = trials[i] * sizeof(int); //Used to find the BYTE size, used to for memory allocation on the device and host
@@ -131,7 +117,6 @@ int main(void)
 		dim3 dimGrid((trials[i] + dimBlock.x - 1) / dimBlock.x, 1, 1);
 	
 		bubbleSort << < dimGrid, dimBlock >> > (device_a, end); //Invokes the Kernel
-	
 
 		cudaError_t error = cudaGetLastError();
 		if (error != cudaSuccess)
@@ -159,6 +144,5 @@ int main(void)
 
 		cudaDeviceReset();
 	}
-	
 	return 0;
 }
