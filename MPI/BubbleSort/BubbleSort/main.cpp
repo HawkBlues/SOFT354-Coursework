@@ -1,10 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
-// Include the MPI header 
 #include <mpi.h> 
 #include "win-gettimeofday.h"
-void device_bubbleSort(int device_array[], int End) {//Used to sort the given array as a BubbleSort
 
+void device_bubbleSort(int device_array[], int End) {//Used to sort the given array as a BubbleSort
 	int swapped = 0;
 	int temp;
 
@@ -18,13 +17,12 @@ void device_bubbleSort(int device_array[], int End) {//Used to sort the given ar
 				swapped = 1;
 			}
 		}
-
 	} while (swapped == 1);
 }
 
 void host_populateRandomArray(int x[], int num_elements) { //Used to populate the given array with random integers
 	for (int i = 0; i < num_elements; i++) {
-			x[i] = rand() % 100 + 1;
+		x[i] = rand() % 100 + 1;
 	}
 }
 
@@ -51,42 +49,32 @@ int main(int argc, char* argv[])
 	double MPI_time_with_allocation; //Used to store time
 	double MPI_end_time;//Used to store time
 	
-
-
-
 	if (world_size < 2) {
 		fprintf(stderr, "World size must be greater than 1 for %s\n", argv[0]);
 		int error = MPI_Abort(MPI_COMM_WORLD, 1);
 		return error;
 	}
 
-	MPI_time_with_allocation = get_current_time();	
+	MPI_time_with_allocation = get_current_time(); //Get start time	
 	if (world_rank == 0) {
-		
-		host_array = (int *)malloc(size);
-		host_populateRandomArray(host_array, number_of_elements);
-		MPI_Send(host_array, 1, MPI_INT, 1, 0, MPI_COMM_WORLD);
+		host_array = (int *)malloc(size);//Allocate local memory for array size before array is populated
+		host_populateRandomArray(host_array, number_of_elements);//Populate the local array with random integers
+		MPI_Send(host_array, 1, MPI_INT, 1, 0, MPI_COMM_WORLD); //Send the array via MPI
 		free(host_array);//Removes host_array memory assignment
 	}
 	else if (world_rank == 1) {
 		int count;//Used to store the message size
 		MPI_Status status;//Used to probe the incoming message
 		MPI_Get_count(&status, MPI_INT, &count);//Used to get the message size before recieving it
-
 		int* device_array = (int*)malloc(sizeof(int) * count); //Assign correct memory amount depending on incoming message size
-		
 		MPI_Recv(&device_array, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE); //Recieve the incomming message
-
-		device_bubbleSort(device_array, number_of_elements);
-
-		
+		device_bubbleSort(device_array, number_of_elements);//Bubblesort the Array
 	}
-	MPI_Barrier(MPI_COMM_WORLD);//Blocks untill everything is completed
 
+	MPI_Barrier(MPI_COMM_WORLD);//Blocks untill everything is completed
 	MPI_end_time = get_current_time();//Marks the end time
-	printf("Number of elements = %d, MPI Time (Including data transfer): %lfs\n", number_of_elements, (MPI_end_time - MPI_time_with_allocation));
-	// Clean-up the MPI environment
-	MPI_Finalize();
+	printf("Number of elements = %d, MPI Time (Including data transfer): %lfs\n", number_of_elements, (MPI_end_time - MPI_time_with_allocation));//Print how long it took
+	MPI_Finalize();// Clean-up the MPI environment
 
 	return 0;
 }
